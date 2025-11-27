@@ -4,9 +4,12 @@ import "@nomicfoundation/hardhat-verify";
 import "dotenv/config";
 
 // 从环境变量读取配置
-const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
+const PRIVATE_KEY = process.env.PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 const PRIVATE_KEY_2 = process.env.PRIVATE_KEY_2 || "";
 const PRIVATE_KEY_3 = process.env.PRIVATE_KEY_3 || "";
+
+// Mnemonic 助记词（用于生成多个账户）
+const MNEMONIC = process.env.MNEMONIC || "test test test test test test test test test test test junk";
 
 // RPC URLs
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "https://sepolia.infura.io/v3/YOUR_API_KEY";
@@ -36,7 +39,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       chainId: 1337,
       accounts: {
-        mnemonic: process.env.MNEMONIC || "test test test test test test test test test test test junk",
+        mnemonic: MNEMONIC,
         count: 20,
         accountsBalance: "10000000000000000000000", // 10000 ETH per account
       },
@@ -50,7 +53,12 @@ const config: HardhatUserConfig = {
     localhost: {
       url: LOCALHOST_RPC_URL,
       chainId: 1337,
-      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
+      accounts: PRIVATE_KEY
+        ? [PRIVATE_KEY]
+        : {
+            mnemonic: MNEMONIC,
+            count: 20,
+          },
     },
     // Sepolia测试网
     sepolia: {
@@ -88,7 +96,7 @@ const config: HardhatUserConfig = {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
-    artifacts: "./artifacts",
+    artifacts: "./src/artifacts", // 打包目录修改为react项目目录，方便引入
   },
   // Mocha测试配置
   mocha: {

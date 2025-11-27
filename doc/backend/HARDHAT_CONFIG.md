@@ -6,7 +6,38 @@
 
 ## 🔧 环境变量配置
 
-### 1. 创建 `.env` 文件
+### 1. 环境变量文件优先级
+
+Hardhat 使用 `dotenv/config` 加载环境变量，**默认只加载根目录下的 `.env` 文件**。
+
+#### 加载优先级（从高到低）：
+
+1. **系统环境变量**（最高优先级）
+   - 通过命令行或系统设置的环境变量
+   - 例如：`PRIVATE_KEY=xxx npm run deploy`
+
+2. **`.env` 文件**（根目录）
+   - Hardhat 默认加载的文件
+   - 位置：`/.env`
+   - ⚠️ 已在 `.gitignore` 中，不会被提交到 Git
+
+3. **`hardhat.config.ts` 中的默认值**（最低优先级）
+   - 如果环境变量不存在，使用代码中的默认值
+
+#### 重要说明：
+
+- **`dotenv/config` 默认只加载 `.env` 文件**
+- **不会自动加载 `.env.local` 或其他 `.env.*` 文件**
+- 如果需要加载多个文件，需要手动配置 `dotenv`
+
+#### 当前配置：
+
+```typescript
+// hardhat.config.ts
+import "dotenv/config";  // 只加载 .env 文件
+```
+
+### 2. 创建 `.env` 文件
 
 复制 `.env.example` 并填入你的配置：
 
