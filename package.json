@@ -21,9 +21,9 @@
     "deploy:script:mainnet": "hardhat run scripts/deploy.ts --network mainnet",
     "update:env": "node scripts/update-env-from-deployment.js deployments/hardhat.json",
     "update:env:ignition": "node scripts/update-env-from-ignition.js",
-    "deploy:local:full": "npm run compile && npm run deploy:local && copy:contracts && npm run update:env:ignition && npm run dev",
-    "deploy:sepolia:full": "npm run compile && npm run deploy:sepolia && copy:contracts && npm run update:env:ignition -- --network sepolia && npm run build",
-    "deploy:mainnet:full": "npm run compile && npm run deploy:mainnet && copy:contracts && npm run update:env:ignition -- --network mainnet && npm run build",
+    "deploy:local:full": "npm run compile && npm run deploy:local && npm run copy:abi && npm run update:env:ignition && npm run dev",
+    "deploy:sepolia:full": "npm run compile && npm run deploy:sepolia && npm run copy:abi && npm run update:env:ignition -- --network sepolia && npm run build",
+    "deploy:mainnet:full": "npm run compile && npm run deploy:mainnet && npm run copy:abi && npm run update:env:ignition -- --network mainnet && npm run build",
     "node": "hardhat node",
     "verify": "hardhat verify",
     "clean": "hardhat clean",
@@ -102,5 +102,11 @@
     "autoprefixer": "^10.0.1",
     "eslint": "^8",
     "eslint-config-next": "^15.0.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "volta": {
+    "node": "22.18.0"
   }
 }

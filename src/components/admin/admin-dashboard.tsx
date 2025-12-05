@@ -1,11 +1,11 @@
 "use client";
 
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from "wagmi";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CONTRACTS, FISH_NFT_ABI } from "@/lib/contracts";
+import { CONTRACTS, FISH_NFT_ABI, CHAIN_ID } from "@/lib/contracts";
 import { useToast } from "@/components/ui/use-toast";
 import { useState, useEffect } from "react";
 import { formatEther, parseEther } from "viem";
@@ -17,17 +17,84 @@ import { OwnerInfo } from "./owner-info";
  */
 export function AdminDashboard() {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const publicClient = usePublicClient();
   const { toast } = useToast();
   const [isOwner, setIsOwner] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [contractCode, setContractCode] = useState<string | null>(null);
+  const [isCheckingContract, setIsCheckingContract] = useState(false);
+
+  // 检查合约地址是否有效
+  const contractAddress = CONTRACTS.FishNFT as string;
+  const isValidContractAddress = Boolean(
+    contractAddress && 
+    contractAddress.length === 42 && 
+    contractAddress.startsWith("0x") &&
+    contractAddress.toLowerCase() !== "0x0000000000000000000000000000000000000000"
+  );
+
+  // 检查网络是否匹配
+  const isCorrectNetwork = chainId === CHAIN_ID;
+
+  // 检查合约是否已部署（通过检查合约代码）
+  useEffect(() => {
+    const checkContractCode = async () => {
+      if (!isValidContractAddress || !publicClient || !isCorrectNetwork) {
+        setContractCode(null);
+        return;
+      }
+
+      setIsCheckingContract(true);
+      try {
+        const code = await publicClient.getBytecode({
+          address: contractAddress as `0x${string}`,
+        });
+        setContractCode(code || null);
+        console.log("合约代码检查:", code ? `已部署 (代码长度: ${code.length})` : "未部署");
+      } catch (error) {
+        console.error("检查合约代码失败:", error);
+        setContractCode(null);
+      } finally {
+        setIsCheckingContract(false);
+      }
+    };
+
+    checkContractCode();
+  }, [contractAddress, isValidContractAddress, publicClient, isCorrectNetwork]);
 
   // 检查当前地址是否为合约 Owner
-  const { data: ownerAddress } = useReadContract({
+  const { 
+    data: ownerAddress, 
+    isLoading: isLoadingOwner, 
+    error: ownerError 
+  } = useReadContract({
     address: CONTRACTS.FishNFT as `0x${string}`,
     abi: FISH_NFT_ABI,
     functionName: "owner",
+    query: {
+      enabled: isValidContractAddress && isCorrectNetwork && contractCode !== null, // 只在合约已部署且网络正确时查询
+    },
   });
-  
+
+  // 调试日志
+  useEffect(() => {
+    console.log("=== Owner 检查调试信息 ===");
+    console.log("配置的链 ID:", CHAIN_ID);
+    console.log("当前连接的链 ID:", chainId);
+    console.log("网络匹配:", isCorrectNetwork);
+    console.log("合约地址:", CONTRACTS.FishNFT);
+    console.log("合约代码:", contractCode ? `已部署 (${contractCode.length} 字符)` : "未部署");
+    console.log("检查合约代码中:", isCheckingContract);
+    console.log("当前钱包地址:", address);
+    console.log("Owner 地址:", ownerAddress);
+    console.log("加载中:", isLoadingOwner);
+    console.log("错误:", ownerError);
+    if (ownerError) {
+      console.error("读取 Owner 失败:", ownerError);
+    }
+  }, [chainId, isCorrectNetwork, contractCode, isCheckingContract, address, ownerAddress, isLoadingOwner, ownerError]);
+
   // 客户端挂载后设置 mounted 状态，避免 SSR 和客户端渲染不一致
   useEffect(() => {
     setMounted(true);
@@ -65,6 +132,177 @@ export function AdminDashboard() {
     );
   }
 
+  // 检查网络是否匹配
+  if (!isCorrectNetwork) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>管理员后台</CardTitle>
+          <CardDescription className="text-destructive">
+            网络不匹配
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            配置的网络 ID: {CHAIN_ID}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            当前连接的网络 ID: {chainId}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            请切换到正确的网络：
+            {CHAIN_ID === 1337 || CHAIN_ID === 31337 ? (
+              <>
+                <br />• 本地网络 (Localhost:8545)
+                <br />• Chain ID: {CHAIN_ID}
+              </>
+            ) : CHAIN_ID === 11155111 ? (
+              <>
+                <br />• Sepolia 测试网
+                <br />• Chain ID: 11155111
+              </>
+            ) : (
+              <>
+                <br />• 主网
+                <br />• Chain ID: 1
+              </>
+            )}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 检查合约地址是否有效
+  if (!isValidContractAddress) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>管理员后台</CardTitle>
+          <CardDescription className="text-destructive">
+            合约地址未配置，请检查环境变量
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            请在 .env 文件中设置 NEXT_PUBLIC_FISH_NFT_ADDRESS
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 显示加载状态
+  if (isLoadingOwner) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>管理员后台</CardTitle>
+          <CardDescription>正在验证权限...</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  // 显示合约部署状态检查
+  if (isCheckingContract) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>管理员后台</CardTitle>
+          <CardDescription>正在检查合约部署状态...</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  // 如果合约未部署，显示提示
+  if (isValidContractAddress && isCorrectNetwork && contractCode === null && !isLoadingOwner) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>管理员后台</CardTitle>
+          <CardDescription className="text-destructive">
+            合约未部署
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            合约地址: {CONTRACTS.FishNFT}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            当前网络 ID: {chainId} (配置: {CHAIN_ID})
+          </p>
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+            <p className="text-sm font-semibold text-yellow-800 mb-2">
+              ⚠️ 合约未部署到该地址
+            </p>
+            <p className="text-xs text-yellow-700 mb-2">
+              请先部署合约：
+            </p>
+            <ul className="text-xs text-yellow-700 space-y-1 list-disc list-inside">
+              <li>启动本地节点: <code className="bg-yellow-100 px-1 rounded">npx hardhat node</code></li>
+              <li>部署合约: <code className="bg-yellow-100 px-1 rounded">npx hardhat ignition deploy ignition/modules/NFTModule.ts --network localhost</code></li>
+              <li>或使用: <code className="bg-yellow-100 px-1 rounded">npm run deploy:local</code></li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 显示错误信息
+  if (ownerError) {
+    const errorMessage = ownerError.message || String(ownerError);
+    const isContractNotDeployed = errorMessage.includes("returned no data") || 
+                                  errorMessage.includes("0x");
+    
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>管理员后台</CardTitle>
+          <CardDescription className="text-destructive">
+            无法读取合约 Owner 信息
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            错误信息: {errorMessage}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            合约地址: {CONTRACTS.FishNFT}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            合约部署状态: {contractCode ? "✅ 已部署" : "❌ 未部署"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            当前网络 ID: {chainId} (配置: {CHAIN_ID})
+          </p>
+          {isContractNotDeployed && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm font-semibold text-yellow-800 mb-2">
+                ⚠️ 可能的原因：
+              </p>
+              <ul className="text-xs text-yellow-700 space-y-1 list-disc list-inside">
+                <li>合约未部署到该地址</li>
+                <li>本地节点未运行（如果是本地网络）</li>
+                <li>RPC 连接失败</li>
+                <li>网络不匹配</li>
+              </ul>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-2">
+            排查步骤：
+            <br />1. 确认本地节点正在运行（如果是本地网络）
+            <br />2. 检查合约是否已部署到该地址
+            <br />3. 确认钱包已连接到正确的网络
+            <br />4. 检查浏览器控制台的详细错误信息
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!isOwner) {
     return (
       <Card>
@@ -74,13 +312,15 @@ export function AdminDashboard() {
             您不是合约 Owner，无权访问此页面
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            当前钱包地址: {address}
+          </p>
           <p className="text-sm text-muted-foreground">
             Owner 地址: {ownerAddress as string}
           </p>
         </CardContent>
       </Card>
-
     );
   }
 
