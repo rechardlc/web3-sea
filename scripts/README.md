@@ -29,32 +29,7 @@ npm run deploy:script:mainnet
 - 生成 `deployments/{network}.json` 文件
 - 包含所有合约地址和部署信息
 
-**更新环境变量：**
-```bash
-# 从 deployments/ 目录更新
-npm run update:env
-# 或
-node scripts/update-env-from-deployment.js deployments/hardhat.json
-```
-
----
-
-### `update-env-from-deployment.js` - 从传统部署更新环境变量
-
-**用途：** 从 `deployments/{network}.json` 文件更新 `.env.local`
-
-**使用方法：**
-```bash
-# 从部署文件更新
-node scripts/update-env-from-deployment.js deployments/hardhat.json
-
-# 从命令行参数更新
-node scripts/update-env-from-deployment.js \
-  --fish 0x123... --sea 0x456... --gov 0x789...
-
-# 交互式输入
-node scripts/update-env-from-deployment.js --interactive
-```
+**注意：** 传统部署方式已不再推荐使用，建议使用 Ignition 模块化部署。
 
 ---
 
@@ -82,6 +57,68 @@ node scripts/update-env-from-ignition.js --path ignition/deployments/chain-1337/
 
 ---
 
+### `sync-deployment-addresses.js` - 同步部署地址到 .env.local ⭐ **新增**
+
+**用途：** 从 `ignition/deployments/chain-{chainId}/deployed_addresses.json` 同步合约地址到 `.env.local` 的第 13-17 行
+
+**使用方法：**
+```bash
+# 使用 npm 脚本（推荐）
+npm run sync:env:local      # 同步本地网络 (chainId: 1337)
+npm run sync:env:sepolia    # 同步 Sepolia 测试网 (chainId: 11155111)
+npm run sync:env:mainnet    # 同步主网 (chainId: 1)
+
+# 直接使用 node
+node scripts/sync-deployment-addresses.js --network local
+node scripts/sync-deployment-addresses.js --network sepolia
+node scripts/sync-deployment-addresses.js --network mainnet
+node scripts/sync-deployment-addresses.js --network localhost
+
+# 查看帮助
+node scripts/sync-deployment-addresses.js --help
+```
+
+**特点：**
+- ✅ 精确更新 `.env.local` 的第 13-17 行合约地址
+- ✅ 支持多网络（local/hardhat/localhost/sepolia/mainnet）
+- ✅ 自动更新 `NEXT_PUBLIC_CHAIN_ID`
+- ✅ 从 `deployed_addresses.json` 读取部署地址
+- ✅ 智能处理缺失的环境变量
+
+**映射关系：**
+- `NFTModule#FishNFT` → `NEXT_PUBLIC_FISH_NFT_ADDRESS`
+- `TokenModule#SEAToken` → `NEXT_PUBLIC_SEA_TOKEN_ADDRESS`
+- `TokenModule#SEAGovToken` → `NEXT_PUBLIC_SEA_GOV_TOKEN_ADDRESS`
+- `StakingModule#StakingPool` → `NEXT_PUBLIC_STAKING_POOL_ADDRESS`
+- `MarketplaceModule#Marketplace` → `NEXT_PUBLIC_MARKETPLACE_ADDRESS`
+
+**示例输出：**
+```
+🔄 开始同步部署地址...
+📋 网络: local
+🔗 Chain ID: 1337
+
+📖 读取部署记录...
+✅ 找到 5 个合约地址
+
+📋 合约地址映射:
+  NFTModule#FishNFT -> NEXT_PUBLIC_FISH_NFT_ADDRESS
+    0x5FbDB2315678afecb367f032d93F642f64180aa3
+  ...
+
+✏️  更新环境变量...
+  ✅ 更新第 13 行: NEXT_PUBLIC_FISH_NFT_ADDRESS=0x...
+  ✅ 更新第 14 行: NEXT_PUBLIC_SEA_TOKEN_ADDRESS=0x...
+  ...
+
+✅ 同步完成！已更新 .env.local
+✅ 已更新 NEXT_PUBLIC_CHAIN_ID=1337
+
+✨ 完成！请重启前端开发服务器以应用更改。
+```
+
+---
+
 ## 🚀 推荐工作流程
 
 ### 使用 Ignition 模块化部署（推荐）
@@ -90,12 +127,19 @@ node scripts/update-env-from-ignition.js --path ignition/deployments/chain-1337/
 # 1. 部署合约
 npm run deploy:local
 
-# 2. 自动更新环境变量
-npm run update:env:ignition
+# 2. 自动更新环境变量（两种方式任选其一）
+npm run update:env:ignition        # 方式1: 自动检测最新部署
+npm run sync:env:local             # 方式2: 同步指定网络（推荐，更精确）
 
 # 3. 重启前端（如果正在运行）
 # Ctrl+C 停止，然后重新运行
 npm run dev
+```
+
+**或者使用完整流程：**
+```bash
+# 一键部署并同步环境变量
+npm run deploy:local:full
 ```
 
 ### 使用传统脚本部署（备用）
@@ -104,12 +148,13 @@ npm run dev
 # 1. 部署合约
 npm run deploy:script:local
 
-# 2. 更新环境变量
-npm run update:env
+# 2. 手动更新 .env.local 文件中的合约地址
 
 # 3. 重启前端
 npm run dev
 ```
+
+**注意：** 传统部署方式不会自动更新环境变量，需要手动更新 `.env.local` 文件。
 
 ---
 
@@ -123,7 +168,7 @@ npm run dev
 | **增量部署** | ✅ 支持 | ❌ 不支持 |
 | **状态管理** | 自动保存 | 手动保存 |
 | **模块化** | ✅ 高度模块化 | ❌ 单一脚本 |
-| **更新环境变量** | `update-env-from-ignition.js` | `update-env-from-deployment.js` |
+| **更新环境变量** | `update-env-from-ignition.js` | 手动更新 |
 
 ---
 
@@ -149,9 +194,8 @@ npm run dev
 ### Q: 两种方式生成的部署记录格式不同怎么办？
 
 **A:** 
-- Ignition: 使用 `update-env-from-ignition.js`
-- 传统脚本: 使用 `update-env-from-deployment.js`
-- 两种脚本都会更新相同的 `.env.local` 文件
+- Ignition: 使用 `update-env-from-ignition.js` 自动更新
+- 传统脚本: 需要手动更新 `.env.local` 文件中的合约地址
 
 ---
 
@@ -180,5 +224,12 @@ npm run dev
 
 - ✅ **推荐：** 使用 Hardhat Ignition 模块化部署
 - ⚠️ **保留：** `deploy.ts` 作为备用方案
-- 🔧 **工具：** 两种更新环境变量的脚本都已提供
+- 🔧 **工具：** 使用 `update-env-from-ignition.js` 自动更新环境变量
+
+## 📁 当前脚本文件
+
+- `deploy.ts` - 传统部署脚本（备用）
+- `update-env-from-ignition.js` - 从 Ignition 部署更新环境变量 ⭐
+- `sync-deployment-addresses.js` - 同步部署地址到 .env.local ⭐ **新增**
+- `clear-deployments.js` - 清除部署记录
 

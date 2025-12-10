@@ -17,9 +17,24 @@ ignition/modules/
 
 ### 1. 部署到本地网络
 
+**方式1：持久化部署（推荐）**
 ```bash
+# 终端1：启动本地节点
+npm run node
+
+# 终端2：部署到 localhost（持久化）
+npm run deploy:localhost
+```
+
+**方式2：快速测试（内存网络，结果不持久）**
+```bash
+# 直接部署到内存网络（快速测试用）
 npm run deploy:local
 ```
+
+> ⚠️ **重要区别**：
+> - `deploy:local` 使用 `--network hardhat`（内存网络），部署结果在进程结束后会丢失
+> - `deploy:localhost` 使用 `--network localhost`（持久化节点），需要先运行 `npm run node` 启动本地节点
 
 ### 2. 部署到 Sepolia 测试网
 
@@ -35,26 +50,56 @@ npm run deploy:mainnet
 
 ## 📝 传递参数
 
-### 方式一：使用环境变量（推荐）
+### Owner 权限设置
+
+所有合约都支持显式指定 owner，默认使用第一个账户（部署账户）：
+
+**方式一：使用环境变量（推荐）**
 
 在 `.env` 文件中设置：
+
+```env
+# Owner 地址（本地环境第20个账户，Account #19）
+OWNER_ADDRESS=0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199
+
+# 其他配置
+DAO_TREASURY_ADDRESS=0x你的DAO金库地址
+LIQUIDITY_POOL_ADDRESS=0x你的流动性池地址
+```
+
+**本地环境默认 Owner（第20个账户）：**
+- **地址**: `0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199`
+- **私钥**: `0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e`
+- **账户索引**: #19（第20个账户）
+
+**方式二：使用命令行参数**
+
+```bash
+hardhat ignition deploy ignition/modules/SEAGameFiModule.ts \
+  --network localhost \
+  --parameters '{"TokenModule":{"owner":"0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"},"NFTModule":{"owner":"0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"},"StakingModule":{"owner":"0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"},"MarketplaceModule":{"owner":"0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"}}'
+```
+
+**方式三：使用默认账户**
+
+如果不指定 owner，将自动使用配置中的第一个账户（默认行为）。
+
+### 其他参数设置
+
+**使用环境变量：**
 
 ```env
 DAO_TREASURY_ADDRESS=0x你的DAO金库地址
 LIQUIDITY_POOL_ADDRESS=0x你的流动性池地址
 ```
 
-### 方式二：使用命令行参数
+**使用命令行参数：**
 
 ```bash
 hardhat ignition deploy ignition/modules/SEAGameFiModule.ts \
   --network sepolia \
   --parameters '{"MarketplaceModule":{"daoTreasury":"0x...","liquidityPool":"0x..."}}'
 ```
-
-### 方式三：使用 JSON 配置文件
-
-创建 `ignition.config.ts` 或在部署时指定参数文件。
 
 ## 🔧 模块说明
 
@@ -169,6 +214,33 @@ export default CustomModule;
 
 删除部署记录以重新部署：
 
+**方法一：使用 npm 命令（推荐）**
+
+```bash
+# 清除所有部署记录
+npm run clean:deployments
+
+# 清除特定网络的部署记录
+npm run clean:deployments:local      # 本地网络
+npm run clean:deployments:sepolia     # Sepolia 测试网
+```
+
+**方法二：使用脚本**
+
+```bash
+# 清除所有部署记录
+node scripts/clear-deployments.js --all
+
+# 清除特定网络
+node scripts/clear-deployments.js --network hardhat
+node scripts/clear-deployments.js --network sepolia
+
+# 清除特定链 ID
+node scripts/clear-deployments.js --chain-id 1337
+```
+
+**方法三：手动删除**
+
 ```bash
 # 删除特定网络的部署记录
 rm -rf ignition/deployments/chain-1337
@@ -176,6 +248,21 @@ rm -rf ignition/deployments/chain-1337
 # 或删除所有部署记录
 rm -rf ignition/deployments
 ```
+
+**清除后重新部署：**
+
+```bash
+# 1. 清除部署记录
+npm run clean:deployments:local
+
+# 2. 重新部署
+npm run deploy:local
+
+# 3. 更新环境变量
+npm run update:env:ignition
+```
+
+**注意：** 清除部署记录后，需要重新运行 `npm run update:env:ignition` 更新环境变量。
 
 ## 🔍 故障排查
 

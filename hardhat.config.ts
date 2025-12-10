@@ -2,7 +2,6 @@ import type { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import "@nomicfoundation/hardhat-verify";
 import "dotenv/config";
-
 // 从环境变量读取配置
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 const PRIVATE_KEY_2 = process.env.PRIVATE_KEY_2 || "";
@@ -23,6 +22,8 @@ const SEPOLIA_ETHERSCAN_API_KEY = process.env.SEPOLIA_ETHERSCAN_API_KEY || ETHER
 // Gas Reporter
 const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY || "";
 
+
+
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.20",
@@ -38,11 +39,11 @@ const config: HardhatUserConfig = {
     // 本地Hardhat网络
     hardhat: {
       chainId: 1337,
-      accounts: {
-        mnemonic: MNEMONIC,
-        count: 20,
-        accountsBalance: "10000000000000000000000", // 10000 ETH per account
-      },
+      // accounts: {
+      //   mnemonic: MNEMONIC,
+      //   count: 20,
+      //   accountsBalance: "10000000000000000000000", // 10000 ETH per account
+      // },
       // 可以fork主网或测试网进行测试
       // forking: {
       //   url: SEPOLIA_RPC_URL,
@@ -51,14 +52,15 @@ const config: HardhatUserConfig = {
     },
     // 本地节点（如Ganache）
     localhost: {
-      url: LOCALHOST_RPC_URL,
+      url: "http://127.0.0.1:9998",
+      // url: LOCALHOST_RPC_URL,
       chainId: 1337,
-      accounts: PRIVATE_KEY
-        ? [PRIVATE_KEY]
-        : {
-            mnemonic: MNEMONIC,
-            count: 20,
-          },
+      // accounts: PRIVATE_KEY
+      //   ? [PRIVATE_KEY]
+      //   : {
+      //       mnemonic: MNEMONIC,
+      //       count: 20,
+      //     },
     },
     // Sepolia测试网
     sepolia: {

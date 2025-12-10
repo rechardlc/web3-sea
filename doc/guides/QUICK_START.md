@@ -46,21 +46,35 @@ npm run dev
 ```
 
 #### 选项B：完整开发环境（本地节点 + 前端）
+
+**方式1：持久化部署（推荐）**
 ```bash
-# 终端1：启动本地节点
+# 终端1：启动本地节点（端口9998）
 npm run node
 
-# 终端2：部署合约到本地
-npm run deploy:local
+# 终端2：部署合约到 localhost（持久化）
+npm run deploy:localhost
 
-# 终端3：启动前端
+# 终端3：更新环境变量并启动前端
+npm run update:env:ignition -- --network localhost
 npm run dev
 ```
 
-或使用一键启动：
+**方式2：快速测试（内存网络，结果不持久）**
+```bash
+# 终端1：部署到内存网络（快速测试用）
+npm run deploy:local
+
+# 终端2：启动前端
+npm run dev
+```
+
+**一键启动（使用内存网络）：**
 ```bash
 npm run dev:all
 ```
+
+> ⚠️ **注意**：`deploy:local` 使用内存网络，部署结果在进程结束后会丢失。如需持久化部署，请使用 `deploy:localhost`（需要先启动本地节点）。
 
 ### 步骤 4: 部署到测试网
 
