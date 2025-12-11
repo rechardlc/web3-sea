@@ -1,5 +1,14 @@
 "use client";
 
+
+/**
+ * Providers 组件
+ * 作用：提供全局状态管理
+ * 1. 提供 React Query 状态管理
+ * 2. 提供 Wagmi 状态管理
+ * 3. 提供 Toaster 状态管理
+ */
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { wagmiConfig } from "@/lib/wagmi";

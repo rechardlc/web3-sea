@@ -1,3 +1,10 @@
+/**
+ * wagmi 配置
+ * 作用：提供 Wagmi 状态管理
+ * 1. 提供 createConfig 配置
+ * 2. 提供 http 配置
+ * 3. 提供 injected 配置
+ */
 import { createConfig, http, injected } from "wagmi";
 import { mainnet, sepolia, localhost } from "wagmi/chains";
 import { CHAIN_ID } from "./contracts";
@@ -25,7 +32,7 @@ const getRpcUrl = () => {
   switch (CHAIN_ID) {
     case 1337:
     case 31337:
-      return "http://127.0.0.1:8545"; // 本地 Hardhat 节点
+      return "http://127.0.0.1:9998"; // 本地 Hardhat 节点
     case 11155111:
       return process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || "https://sepolia.infura.io/v3/YOUR_API_KEY";
     case 1:

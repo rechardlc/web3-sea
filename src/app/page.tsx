@@ -1,5 +1,14 @@
 "use client";
-
+/**
+ * 首页
+ * 作用：提供首页功能
+ * 1. 提供 ConnectButton 组件
+ * 2. 提供 BuyBlindBox 组件
+ * 3. 提供 MyNFTs 组件
+ * 4. 提供 StakingPool 组件
+ * 5. 提供 Marketplace 组件
+ * 6. 提供 StarUpgrade 组件
+ */
 import { ConnectButton } from "@/components/web3/connect-button";
 import { BuyBlindBox } from "@/components/fish/buy-blind-box";
 import { MyNFTs } from "@/components/fish/my-nfts";
@@ -10,15 +19,11 @@ import { TokenBalance } from "@/components/web3/token-balance";
 import { BuyNFT } from "@/components/marketplace/buy-nft";
 import { useAccount } from "wagmi";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEffect, useState } from "react";
+import { useMounted } from "@/lib/hooks/use-mounted";
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const { isConnected } = useAccount();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <main className="container mx-auto px-4 py-8">

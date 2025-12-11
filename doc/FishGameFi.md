@@ -599,7 +599,7 @@ SEA 代币是项目中的主要功能代币，负责经济活动和激励。
 
 **技术栈：**
 - **框架**：React + Next.js
-- **Web3**：Web3.js / Ethers.js
+- **Web3**：Web3.js / Ethers.js / viem.js / wagmi
 - **UI**：Tailwind CSS + Framer Motion
 - **3D 渲染**：Three.js（鱼类 3D 模型展示）
 
@@ -612,7 +612,7 @@ SEA 代币是项目中的主要功能代币，负责经济活动和激励。
 ### 6.3 后端服务
 
 **服务架构：**
-- **API 服务**：Node.js + Express
+- **API 服务**：golang
 - **数据库**：PostgreSQL（用户数据、交易记录）
 - **缓存**：Redis（实时数据、排行榜）
 - **存储**：IPFS（NFT 元数据和媒体文件）

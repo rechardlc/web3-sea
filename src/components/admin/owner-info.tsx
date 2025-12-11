@@ -17,7 +17,7 @@ export function OwnerInfo() {
     { name: "StakingPool", address: CONTRACTS.StakingPool, abi: STAKING_POOL_ABI },
     { name: "Marketplace", address: CONTRACTS.Marketplace, abi: MARKETPLACE_ABI },
   ];
-
+  console.log(contracts);
   return (
     <Card>
       <CardHeader>

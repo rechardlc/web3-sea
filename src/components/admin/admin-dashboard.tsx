@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useState, useEffect } from "react";
 import { formatEther, parseEther } from "viem";
 import { OwnerInfo } from "./owner-info";
+import { useMounted } from "@/lib/hooks/use-mounted";
 
 /**
  * 管理员后台系统
@@ -21,7 +22,7 @@ export function AdminDashboard() {
   const publicClient = usePublicClient();
   const { toast } = useToast();
   const [isOwner, setIsOwner] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [contractCode, setContractCode] = useState<string | null>(null);
   const [isCheckingContract, setIsCheckingContract] = useState(false);
 
@@ -33,7 +34,6 @@ export function AdminDashboard() {
     contractAddress.startsWith("0x") &&
     contractAddress.toLowerCase() !== "0x0000000000000000000000000000000000000000"
   );
-
   // 检查网络是否匹配
   const isCorrectNetwork = chainId === CHAIN_ID;
 
@@ -47,7 +47,8 @@ export function AdminDashboard() {
 
       setIsCheckingContract(true);
       try {
-        const code = await publicClient.getBytecode({
+        // getcode用于判断合约是否部署
+        const code = await publicClient.getCode({
           address: contractAddress as `0x${string}`,
         });
         setContractCode(code || null);
@@ -76,29 +77,6 @@ export function AdminDashboard() {
       enabled: isValidContractAddress && isCorrectNetwork && contractCode !== null, // 只在合约已部署且网络正确时查询
     },
   });
-
-  // 调试日志
-  useEffect(() => {
-    console.log("=== Owner 检查调试信息 ===");
-    console.log("配置的链 ID:", CHAIN_ID);
-    console.log("当前连接的链 ID:", chainId);
-    console.log("网络匹配:", isCorrectNetwork);
-    console.log("合约地址:", CONTRACTS.FishNFT);
-    console.log("合约代码:", contractCode ? `已部署 (${contractCode.length} 字符)` : "未部署");
-    console.log("检查合约代码中:", isCheckingContract);
-    console.log("当前钱包地址:", address);
-    console.log("Owner 地址:", ownerAddress);
-    console.log("加载中:", isLoadingOwner);
-    console.log("错误:", ownerError);
-    if (ownerError) {
-      console.error("读取 Owner 失败:", ownerError);
-    }
-  }, [chainId, isCorrectNetwork, contractCode, isCheckingContract, address, ownerAddress, isLoadingOwner, ownerError]);
-
-  // 客户端挂载后设置 mounted 状态，避免 SSR 和客户端渲染不一致
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (address && ownerAddress) {

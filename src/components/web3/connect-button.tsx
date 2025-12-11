@@ -3,19 +3,15 @@
 import { useAccount, useDisconnect, useConnect } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { formatAddress } from "@/lib/utils";
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Wallet } from "lucide-react";
+import { useMounted } from "@/lib/hooks/use-mounted";
 
 export function ConnectButton() {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { connect, connectors } = useConnect();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // 在客户端挂载之前，显示占位符以确保服务器端和客户端渲染一致
   if (!mounted) {
