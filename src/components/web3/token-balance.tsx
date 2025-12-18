@@ -1,32 +1,44 @@
 "use client";
 
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount, useReadContracts } from "wagmi";
 import { CONTRACTS, SEA_TOKEN_ABI, SEA_GOV_TOKEN_ABI } from "@/lib/contracts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatBalance } from "@/lib/utils";
+import { useMemo } from "react";
 
 export function TokenBalance() {
   const { address } = useAccount();
-  // useReadContract读取合约余额
-  const { data: seaBalance, isLoading: loadingSea } = useReadContract({
-    address: CONTRACTS.SEAToken as `0x${string}`,
-    abi: SEA_TOKEN_ABI,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
+  
+  // 使用 useReadContracts 实现 MultiCall，一次性读取多个合约余额
+  const contracts = useMemo(() => {
+    if (!address) return [];
+    return [
+      {
+        address: CONTRACTS.SEAToken as `0x${string}`,
+        abi: SEA_TOKEN_ABI,
+        functionName: "balanceOf",
+        args: [address],
+      },
+      {
+        address: CONTRACTS.SEAGovToken as `0x${string}`,
+        abi: SEA_GOV_TOKEN_ABI,
+        functionName: "balanceOf",
+        args: [address],
+      },
+    ];
+  }, [address]);
+
+  const { data: balances, isLoading } = useReadContracts({
+    contracts: contracts as any,
     query: {
-      enabled: !!address,
+      enabled: !!address && contracts.length > 0,
+      refetchInterval: 15_000,
     },
   });
 
-  const { data: govBalance, isLoading: loadingGov } = useReadContract({
-    address: CONTRACTS.SEAGovToken as `0x${string}`,
-    abi: SEA_GOV_TOKEN_ABI,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    },
-  });
+  // 从 MultiCall 结果中提取余额
+  const [seaBalance, govBalance] = balances?.map((balance) => balance.result as bigint | undefined) || [];
+
   if (!address) {
     return null;
   }
@@ -41,20 +53,20 @@ export function TokenBalance() {
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">SEA</span>
           <span className="text-lg font-semibold">
-            {loadingSea ? (
+            {isLoading ? (
               <span className="animate-pulse">加载中...</span>
             ) : (
-              formatBalance((seaBalance as bigint | undefined) || BigInt(0), 18)
+              formatBalance(seaBalance || BigInt(0), 18)
             )}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">SEA-G</span>
           <span className="text-lg font-semibold">
-            {loadingGov ? (
+            {isLoading ? (
               <span className="animate-pulse">加载中...</span>
             ) : (
-              formatBalance((govBalance as bigint | undefined) || BigInt(0), 18)
+              formatBalance(govBalance || BigInt(0), 18)
             )}
           </span>
         </div>
